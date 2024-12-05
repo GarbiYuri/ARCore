@@ -68,14 +68,14 @@ loader.load("https://immersive-web.github.io/webxr-samples/media/gltf/reticle/re
   scene.add(reticle);
 })
 
-let flower;
-loader.load("https://immersive-web.github.io/webxr-samples/media/gltf/sunflower/sunflower.gltf", function(gltf) {
-  flower = gltf.scene;
+let object;
+loader.load("scene.gltf", function(gltf) {
+  object = gltf.scene;
 });
 
 session.addEventListener("select", (event) => {
-  if (flower) {
-    const clone = flower.clone();
+  if (object) {
+    const clone = object.clone();
     clone.position.copy(reticle.position);
     scene.add(clone);
   }
