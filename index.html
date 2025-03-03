@@ -4,38 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <title>Hello WebXR! Alterado</title>
+  <title>Hello WebXR!</title>
 
   <!-- three.js -->
   <script src="https://unpkg.com/three@0.126.0/build/three.js"></script>
-  
   <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-
 </head>
 <body>
 
-<!-- Starting an immersive WebXR session requires user interaction.
-    We start this one with a simple button. -->
-<button onclick="activateXR()">Start Hello WebXR Alterado</button>
-
-<!-- Optional loading indicator -->
-<div id="loading" style="display: block;">Loading...</div>
+<button onclick="activateXR()">Start Hello WebXR Alterado 2</button>
 
 <script>
 async function activateXR() {
+  // Criar a mensagem de "Aguarde" dinamicamente
+  const loadingMessage = document.createElement('div');
+  loadingMessage.innerHTML = '<p>Aguarde enquanto carregamos o ambiente...</p>';
+  loadingMessage.style.position = 'fixed';
+  loadingMessage.style.top = '50%';
+  loadingMessage.style.left = '50%';
+  loadingMessage.style.transform = 'translate(-50%, -50%)';
+  loadingMessage.style.color = 'white';
+  loadingMessage.style.fontSize = '20px';
+  loadingMessage.style.textAlign = 'center';
+  loadingMessage.style.zIndex = 1000;
+  document.body.appendChild(loadingMessage);
+
+  // Criar o botão OK (inicialmente oculto)
+  const okButton = document.createElement('button');
+  okButton.innerText = 'OK';
+  okButton.style.display = 'none';
+  okButton.style.position = 'fixed';
+  okButton.style.top = '80%';
+  okButton.style.left = '50%';
+  okButton.style.transform = 'translateX(-50%)';
+  okButton.style.zIndex = 1000;
+  okButton.onclick = () => {
+    console.log("AR Interação iniciada");
+  };
+  document.body.appendChild(okButton);
+
   // Add a canvas element and initialize a WebGL context that is compatible with WebXR.
   const canvas = document.createElement("canvas");
   document.body.appendChild(canvas);
   const gl = canvas.getContext("webgl", {xrCompatible: true});
 
-  // To be continued in upcoming steps.
   const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera();
+  camera.matrixAutoUpdate = false;
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
-  directionalLight.position.set(10, 15, 10);
-  scene.add(directionalLight);
-
-  // Set up the WebGLRenderer, which handles rendering to the session's base layer.
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
     preserveDrawingBuffer: true,
@@ -44,46 +60,51 @@ async function activateXR() {
   });
   renderer.autoClear = false;
 
-  // The API directly updates the camera matrices.
-  const camera = new THREE.PerspectiveCamera();
-  camera.matrixAutoUpdate = false;
-
-  // Initialize a WebXR session using "immersive-ar".
   const session = await navigator.xr.requestSession("immersive-ar", {requiredFeatures: ['hit-test']});
   session.updateRenderState({
     baseLayer: new XRWebGLLayer(session, gl)
   });
 
-  // Reference spaces
   const referenceSpace = await session.requestReferenceSpace('local');
   const viewerSpace = await session.requestReferenceSpace('viewer');
   const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
 
   const loader = new THREE.GLTFLoader();
   let reticle;
-  
-  // Load the reticle before the session starts
+
   loader.load("https://immersive-web.github.io/webxr-samples/media/gltf/reticle/reticle.gltf", function(gltf) {
     reticle = gltf.scene;
     reticle.visible = false;
     scene.add(reticle);
-    document.getElementById("loading").style.display = "none";  // Hide loading indicator after the model is loaded
   });
 
-  let cand;  // Tênis (Modelo)
+  let tenis;
   loader.load("gltf/tenis.gltf", function(gltf) {
-    cand = gltf.scene;
+    tenis = gltf.scene;
+    tenis.scale.set(0.2, 0.2, 0.2);  // Ajuste de escala do tênis
+    tenis.position.set(0, 0, 0);  // Ajuste de posição do tênis
+    scene.add(tenis);
   });
 
+  // Monitorando a visibilidade do retículo e mostrando o botão OK
+  const monitorReticleVisibility = () => {
+    if (reticle && reticle.visible) {
+      // Ocultar a mensagem de loading e mostrar o botão OK
+      loadingMessage.style.display = "none";
+      okButton.style.display = "block";
+    }
+  };
+
+  // Event listener for selecting (placing) the 3D object in AR scene
   session.addEventListener("select", (event) => {
-    if (cand) {
-      const clone = cand.clone();
+    if (tenis && reticle) {
+      const clone = tenis.clone();
       clone.position.copy(reticle.position);
       scene.add(clone);
     }
   });
 
-  // Create a render loop that allows us to draw on the AR view.
+  // Create a render loop
   const onXRFrame = (time, frame) => {
     session.requestAnimationFrame(onXRFrame);
     gl.bindFramebuffer(gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
@@ -105,14 +126,17 @@ async function activateXR() {
         reticle.visible = true;
         reticle.position.set(hitPose.transform.position.x, hitPose.transform.position.y, hitPose.transform.position.z);
         reticle.updateMatrixWorld(true);
+
+        monitorReticleVisibility();  // Verificar se o retículo está visível e exibir o botão OK
       }
 
+      // Render the scene with THREE.WebGLRenderer.
       renderer.render(scene, camera);
     }
-  }
+  };
+
   session.requestAnimationFrame(onXRFrame);
 }
 </script>
-
 </body>
 </html>
