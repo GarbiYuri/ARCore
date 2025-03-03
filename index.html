@@ -75,8 +75,8 @@ loader.load("gltf/tenis.gltf", function(gltf) {
 });
 
 session.addEventListener("select", (event) => {
-  if (flower) {
-    const clone = flower.clone();
+  if (cand) {
+    const clone = cand.clone();
     clone.position.copy(reticle.position);
     scene.add(clone);
   }
