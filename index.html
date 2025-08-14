@@ -31,6 +31,17 @@
       renderer.autoClear = false;
 
       const scene = new THREE.Scene();
+
+      // Luz ambiente (ilumina tudo de forma suave)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // cor branca, intensidade 1.5
+scene.add(ambientLight);
+
+// Luz direcional (simula o sol)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+directionalLight.position.set(0, 10, 0); // acima
+scene.add(directionalLight);
+
+
       const camera = new THREE.PerspectiveCamera();
       camera.matrixAutoUpdate = false;
 
@@ -62,13 +73,21 @@
 
       // Modelo (aqui você troca pelo seu próprio .gltf ou .glb)
       let flower = null;
-      loader.load(
-        "https://immersive-web.github.io/webxr-samples/media/gltf/sunflower/sunflower.gltf",
-        (gltf) => {
-          flower = gltf.scene;
-          flower.scale.set(1, 1, 1); // Ajuste de escala do modelo
-        }
-      );
+     loader.load(
+  "https://immersive-web.github.io/webxr-samples/media/gltf/sunflower/sunflower.gltf",
+  (gltf) => {
+    flower = gltf.scene;
+    flower.scale.set(1, 1, 1); // Ajuste de escala
+
+    // Força o uso de material básico que ignora luz
+    flower.traverse((child) => {
+      if (child.isMesh && child.material.map) {
+        child.material = new THREE.MeshBasicMaterial({ map: child.material.map });
+      }
+    });
+  }
+);
+
 
       // Evento ao tocar na tela
       session.addEventListener("select", () => {
